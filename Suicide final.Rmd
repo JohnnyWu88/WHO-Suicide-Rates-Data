@@ -1,0 +1,241 @@
+---
+title: "Predicting Suicide Rates for Females in America"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+library(dplyr)
+library(gapminder)
+library(ggplot2)
+library (e1071)
+library(tree)
+library(basicTrendline)
+who.df <- read.csv("who_suicide_statistics.csv", header = TRUE)
+who.df <- na.omit(who.df)
+```
+
+```{r}
+subset.who.df <- who.df[,-6]
+subset.who.df <- filter(subset.who.df, country == "United States of America")
+subset.who.df <- filter(subset.who.df, sex == "female")
+suicide.df <- subset.who.df
+
+```
+
+```{r}
+str(suicide.df)
+ggplot(data = suicide.df, aes(x = suicide.df$year, y = suicide.df$suicides_no))+geom_point() +facet_grid(. ~ suicide.df$age)
+```
+```{r}
+age1 <- subset(suicide.df, age == '5-14 years')
+age2 <- subset(suicide.df, age == '15-24 years')
+age3 <- subset(suicide.df, age == '25-34 years')
+age4 <- subset(suicide.df, age == '35-54 years')
+age5 <- subset(suicide.df, age == '55-74 years')
+age6 <- subset(suicide.df, age == '75+ years')
+
+```
+
+```{r}
+#making plots with linear regression lines
+
+summary(age1)
+Lm.suicide.df1 <- lm(age1$suicides_no~age1$year, data = age1)
+plot(age1$suicides_no~age1$year, data = age1, main = "Linear Regression for Ages 5 - 14", xlab = "Year", ylab = "Number of Deaths")
+abline(Lm.suicide.df1, col = "darkturquoise")
+summary(Lm.suicide.df1)
+
+
+summary(age2)
+Lm.suicide.df2 <- lm(age2$suicides_no~age2$year, data = age2)
+plot(age2$suicides_no~age2$year, data = age2, main = "Linear Regression for Ages 15 - 24", xlab = "Year", ylab = "Number of Deaths")
+abline(Lm.suicide.df2, col = "darkorchid4")
+summary(Lm.suicide.df2)
+
+
+summary(age3)
+Lm.suicide.df3 <- lm(age3$suicides_no~age3$year, data = age3)
+plot(age3$suicides_no~age3$year, data = age3, main = "Linear Regression for Ages 25 - 34", xlab = "Year", ylab = "Number of Deaths")
+abline(Lm.suicide.df3, col = "gold")
+summary(Lm.suicide.df3)
+
+
+summary(age4)
+Lm.suicide.df4 <- lm(age4$suicides_no~age4$year, data = age4)
+plot(age4$suicides_no~age4$year, data = age4, main = "Linear Regression for Ages 35 - 54", xlab = "Year", ylab = "Number of Deaths")
+abline(Lm.suicide.df4, col = "red")
+summary(Lm.suicide.df4)
+
+
+summary(age5)
+Lm.suicide.df5 <- lm(age5$suicides_no~age5$year, data = age5)
+plot(age5$suicides_no~age5$year, data = age5, main = "Linear Regression for Ages 55 - 74", xlab = "Year", ylab = "Number of Deaths")
+abline(Lm.suicide.df5, col = "dodgerblue4")
+summary(Lm.suicide.df5)
+
+
+summary(age6)
+Lm.suicide.df6 <- lm(age6$suicides_no~age6$year, data = age6)
+plot(age6$suicides_no~age6$year, data = age6, main = "Linear Regression for Ages 75+", xlab = "Year", ylab = "Number of Deaths")
+abline(Lm.suicide.df6, col = "darkorange2")
+summary(Lm.suicide.df6)
+```
+
+```{r}
+#making test and training for each age group
+
+data.size1<-nrow(age1)
+train.rows1<-sample(1:data.size1, data.size1/2)
+train.data1<-age1[train.rows1,]
+test.data1<-age1[-train.rows1,]
+true.vals1<-age1$suicides_no
+
+
+data.size2<-nrow(age2)
+train.rows2<-sample(1:data.size2, data.size2/2)
+train.data2<-age2[train.rows2,]
+test.data2<-age2[-train.rows2,]
+true.vals2<-age2$suicides_no
+
+
+data.size3<-nrow(age3)
+train.rows3<-sample(1:data.size3, data.size3/2)
+train.data3<-age3[train.rows3,]
+test.data3<-age3[-train.rows3,]
+true.vals3<-age3$suicides_no
+
+
+data.size4<-nrow(age4)
+train.rows4<-sample(1:data.size4, data.size4/2)
+train.data4<-age4[train.rows4,]
+test.data4<-age4[-train.rows4,]
+true.vals4<-age4$suicides_no
+
+
+data.size5<-nrow(age5)
+train.rows5<-sample(1:data.size5, data.size5/2)
+train.data5<-age5[train.rows5,]
+test.data5<-age5[-train.rows5,]
+true.vals5<-age5$suicides_no
+
+
+data.size6<-nrow(age6)
+train.rows6<-sample(1:data.size6, data.size6/2)
+train.data6<-age6[train.rows6,]
+test.data6<-age6[-train.rows6,]
+true.vals6<-age6$suicides_no
+
+
+```
+
+
+```{r}
+#making plots with polynomial regressions
+
+death1 <- age1$year^2
+quadratic.model1 <- lm(age1$suicides_no ~ age1$year + death1)
+Poly.death <- seq(1980, 2015, 0.1)
+predict.death <- predict(quadratic.model1, list(year = Poly.death, time2 = Poly.death^2))
+plot(age1$year, age1$suicides_no, pch = 16, cex.lab = 1.3, col = "blue", main = "Polynomial Regression for Ages 5 - 14", xlab = "Year", ylab = "Number of Deaths" )
+lines(age1$year, predict(lm(age1$suicides_no ~ poly(age1$year, 2, raw = TRUE), data = train.data1)), col="darkturquoise")
+summary(quadratic.model1)
+
+
+
+death2 <- age2$year^2
+quadratic.model2 <- lm(age2$suicides_no ~ age2$year + death2)
+Poly.death2 <- seq(1980, 2015, 0.1)
+predict.death2 <- predict(quadratic.model2, list(year = Poly.death2, time2 = Poly.death2^2))
+plot(age2$year, age2$suicides_no, pch = 16, cex.lab = 1.3, col = "blue", main = "Polynomial Regression for Ages 15 - 24", xlab = "Year", ylab = "Number of Deaths" )
+lines(age2$year, predict(lm(age2$suicides_no ~ poly(age2$year, 2, raw = TRUE), data = train.data2)), col="darkturquoise")
+summary(quadratic.model2)
+
+
+
+death3 <- age3$year^2
+quadratic.model3 <- lm(age3$suicides_no ~ age3$year + death3)
+Poly.death3 <- seq(1980, 2015, 0.1)
+predict.death3 <- predict(quadratic.model3, list(year = Poly.death3, time3 = Poly.death3^2))
+plot(age3$year, age3$suicides_no, pch = 16, cex.lab = 1.3, col = "blue", main = "Polynomial Regression for Ages 25 - 34", xlab = "Year", ylab = "Number of Deaths" )
+lines(age3$year, predict(lm(age3$suicides_no ~ poly(age3$year, 2, raw = TRUE), data = train.data3)), col="darkturquoise")
+summary(quadratic.model3)
+
+
+
+death4 <- age4$year^2
+quadratic.model4 <- lm(age4$suicides_no ~ age4$year + death4)
+Poly.death4 <- seq(1980, 2015, 0.1)
+predict.death4 <- predict(quadratic.model4, list(year = Poly.death4, time4 = Poly.death4^2))
+plot(age4$year, age4$suicides_no, pch = 16, cex.lab = 1.3, col = "blue", main = "Polynomial Regression for Ages 35 - 54", xlab = "Year", ylab = "Number of Deaths" )
+lines(age4$year, predict(lm(age4$suicides_no ~ poly(age4$year, 2, raw = TRUE), data = train.data4)), col="darkturquoise")
+summary(quadratic.model4)
+
+
+
+death5 <- age5$year^2
+quadratic.model5 <- lm(age5$suicides_no ~ age5$year + death5)
+Poly.death5 <- seq(1980, 2015, 0.1)
+predict.death5 <- predict(quadratic.model5, list(year = Poly.death5, time5 = Poly.death5^2))
+plot(age5$year, age5$suicides_no, pch = 16, cex.lab = 1.3, col = "blue", main = "Polynomial Regression for Ages 55 - 74", xlab = "Year", ylab = "Number of Deaths" )
+lines(age5$year, predict(lm(age5$suicides_no ~ poly(age5$year, 2, raw = TRUE), data = train.data5)), col="darkturquoise")
+summary(quadratic.model5)
+
+
+
+death6 <- age6$year^2
+quadratic.model6 <- lm(age6$suicides_no ~ age6$year + death6)
+Poly.death6 <- seq(1980, 2015, 0.1)
+predict.death6 <- predict(quadratic.model6, list(year = Poly.death6, time6 = Poly.death6^2))
+plot(age6$year, age6$suicides_no, pch = 16, cex.lab = 1.3, col = "blue", main = "Polynomial Regression for Ages 75+", xlab = "Year", ylab = "Number of Deaths" )
+lines(age6$year, predict(lm(age6$suicides_no ~ poly(age6$year, 2, raw = TRUE), data = train.data6)), col="darkturquoise")
+summary(quadratic.model6)
+
+```
+
+```{r}
+#polynomial regression trendlines with residuals for each age group
+
+trendline(age1$year, age1$suicides_no, model = 'line3P', main = "Polynomial Regression with Residuals for Ages 5 - 14", xlab = "Year", ylab = "Number of Suicides")
+trendline(age2$year, age2$suicides_no, model = 'line3P', main = "Polynomial Regression with Residuals for Ages 15 - 24", xlab = "Year", ylab = "Number of Suicides")
+trendline(age3$year, age3$suicides_no, model = 'line3P', main = "Polynomial Regression with Residuals for Ages 25 - 34", xlab = "Year", ylab = "Number of Suicides")
+trendline(age4$year, age4$suicides_no, model = 'line3P', main = "Polynomial Regression with Residuals for Ages 35 - 54", xlab = "Year", ylab = "Number of Suicides")
+trendline(age5$year, age5$suicides_no, model = 'line3P', main = "Polynomial Regression with Residuals for Ages 55 - 74", xlab = "Year", ylab = "Number of Suicides")
+trendline(age6$year, age6$suicides_no, model = 'line3P', main = "Polynomial Regression with Residuals for Ages 75+", xlab = "Year", ylab = "Number of Suicides")
+```
+
+```{r}
+#Predicted regression lines for each age group
+
+curve(0.062889*x^2 - 249.39*x + 247293, from = 2015, to = 2050, xlab = "Year", ylab = "Number of Deaths", main = "Predicted Number of Deaths for Ages 5- 14")
+curve(1.3164*x^2 - 5258.1*x + 5251386, from = 2015, to = 2050, xlab = "Year", ylab = "Number of Deaths", main = "Predicted Number of Deaths for Ages 15 - 24")
+curve(1.3568*x^2 - 5425*x + 5423791, from = 2015, to = 2050, xlab = "Year", ylab = "Number of Deaths", main = "Predicted Number of Deaths for Ages 25 - 34")
+curve(1.8198*x^2 - 7214*x + 7151375, from = 2015, to = 2050, xlab = "Year", ylab = "Number of Deaths", main = "Predicted Number of Deaths for Ages 35 - 54")
+curve(3.5883*x^2 - 14314*x + 14275966, from = 2015, to = 2050, xlab = "Year", ylab = "Number of Deaths", main = "Predicted Number of Deaths for Ages 55- 74")
+curve(-0.25027*x^2 +999.73*x - 997881, from = 2015, to = 2050, xlab = "Year", ylab = "Number of Deaths", main = "Predicted Number of Deaths for Ages 75+")
+
+```
+
+```{r}
+#number of predicted deaths for each age group in 2050
+
+age1deaths <- 0.062889*(2050)^2 - 249.39*(2050) + 247293
+age1deaths
+age2deaths <- 1.3164*(2050)^2 - 5258.1*(2050) + 5251386
+age2deaths
+age3deaths <- 1.3568*(2050)^2 - 5425*(2050) + 5423791
+age3deaths
+age4deaths <- 1.8198*(2050)^2 - 7214*(2050) + 7151375
+age4deaths
+age5deaths <- 3.5883*(2050)^2 - 14314*(2050) + 14275966
+age5deaths
+age6deaths <- -0.25027*(2050)^2 +999.73*(2050) - 997881
+age6deaths
+```
+
